@@ -12,7 +12,7 @@ getRuleForType = (type) => {
   let rule = typeMap[type];
      
   if(!rule){
-    rule = {contents: {}, parents: [], parentsObj: {}};
+    rule = {contents: {}, parents: []};
     typeMap[type] = rule;  
   }
   return rule;
@@ -20,41 +20,31 @@ getRuleForType = (type) => {
 
 let input = await inputTextPromise.then((t) =>  t.split(groupSplit).map((a)=>a.trim()))
 input.pop();
- input.forEach((rule)=> {
-   definition = rule.split(' contain ');
-   rulesFor = definition[0].replace('bags', 'bag');
-   contentRules = definition[1].replace('.', '').split(', ');
-   ruleForObj = getRuleForType(rulesFor);
-   contentRules.forEach((rule) => {
-     if(rule === 'no other bags'){
-      return;
-    }
-     const rulesplit = rule.match(/^(\d+) (.+)$/);
+input.forEach((rule)=> {
+  rule = rule.replaceAll('bags', 'bag').replace('.', '');
+  [rulesFor, contentRules] = rule.split(' contain ');
+  contentRules = contentRules.split(', ').filter((r) => r !== 'no other bag');
+  ruleForObj = getRuleForType(rulesFor);
+  contentRules.forEach((rule) => {
+    const [_, countStr, type] = rule.match(/^(\d+) (.+)$/);
+    let existingRule = getRuleForType(type);
+    existingRule.parents.push(rulesFor);
+    ruleForObj.contents[type] = parseInt(countStr);
+  })
 
-     const count = parseInt(rulesplit[1]);
-     rulesplit[2] = rulesplit[2].replace('bags', 'bag');
-     
-      let existingRule = getRuleForType(rulesplit[2]);
-      existingRule.parents.push(rulesFor);
-      existingRule.parentsObj[rulesFor] = ruleForObj;
-      ruleForObj.contents[rulesplit[2]] = count;
-   })
-
-   typeMap[rulesFor] = ruleForObj;
-  
- })
+  typeMap[rulesFor] = ruleForObj;  
+})
 
 
- theSet = new Set();
+ let parentSet = new Set();
  findParents = (type) => {
-  theSet.add(type);
+  parentSet.add(type);
   const typeObj = getRuleForType(type);
   typeObj.parents.forEach(findParents)
  }
 
  sumChildrenCount = (typeObj) => {
-  const children = Object.entries(typeObj.contents);
-  return children.reduce((acc, [name, count]) => {
+  return Object.entries(typeObj.contents).reduce((acc, [name, count]) => {
     const insideCount = sumChildrenCount(getRuleForType(name));
     return  count * insideCount + acc;
   }, 1)
@@ -66,10 +56,10 @@ input.pop();
 
 
  findParents(lookingFor)
- theSet.delete(lookingFor)
+ parentSet.delete(lookingFor)
  
  bagsInside = sumChildrenCount(getRuleForType(lookingFor)) - 1
  
- console.log(`Bags that can have a '${lookingFor}': ${theSet.size}`);
+ console.log(`Bags that can have a '${lookingFor}': ${parentSet.size}`);
  console.log(`Bags inside of a '${lookingFor}': ${bagsInside}`);
  
