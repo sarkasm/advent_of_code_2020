@@ -19,48 +19,29 @@ ratingsArr = input.reduce((acc, val) => {
   return acc
 }, [true]);
 
-let diff = 0;
-
 ratingsIdx = 0;
 diffCount= {1: 0, 2:0, 3:1} // 3 is 1 because the top adapter will add 3 to get to device
 
 while(ratingsIdx < ratingsArr.length){
-  let firstMatch = 0;
-  
-  for(i=1; i<=3;i++){
-    if(ratingsArr[ratingsIdx + i]){
-      if(!firstMatch){
-        firstMatch = i;
-        diffCount[firstMatch] = diffCount[firstMatch] + 1;
-      }
-    }
+  const nearest = [1, 2, 3].find((i) => ratingsArr[ratingsIdx + i]);
+  if(!nearest){
+    break
   }
 
-  if(firstMatch){
-    ratingsIdx = ratingsIdx + firstMatch;
-  } else {
-    break;
-  }
+  ratingsIdx += nearest;
+  diffCount[nearest] = diffCount[nearest] + 1;
 }
 
 
-let backwardsIdx = ratingsArr.length -2;
 let backwardTotals = [];
 backwardTotals[ratingsArr.length - 1] = 1;
 
-while(backwardsIdx >= 0 ){
-  let total=0;
+for(backwardsIdx=ratingsArr.length - 2; backwardsIdx >= 0; backwardsIdx--){
   if(ratingsArr[backwardsIdx]){
-    for(i=1; i<=3;i++){
-      if(ratingsArr[backwardsIdx] && ratingsArr[backwardsIdx + i]){
-        total += backwardTotals[backwardsIdx + i];
-      }
-    }
+    let total = [1, 2, 3].reduce((acc, i) => acc + (backwardTotals[backwardsIdx + i] || 0), 0)
     backwardTotals[backwardsIdx] = total;
   }
-  backwardsIdx--;
 }
 
 console.log(`Solution 1: ${diffCount[1] * diffCount[3]}`)
-
 console.log(`Solution 2: ${backwardTotals[0]}`);
